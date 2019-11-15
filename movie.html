@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="UTF-8">
+  <title>Searches</title>
+  <link rel="icon" type="image/x-icon" href="img/icon.png" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.2/TweenMax.min.js"></script>
+  <style>
+    body {
+          overflow: hidden;
+          margin: 0;
+          background: black;
+        }
+
+        .btn {
+          background: black;
+          color: white;
+          font-family: monospace;
+          cursor: pointer;
+          margin: 4px;
+        }
+
+        .main-content {
+          overflow:hidden;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-flow: column;
+          height: 100vh;
+          background: linear-gradient(to right, rgba(36,31,31,1) 0%, rgba(36,31,31,1) 32%, rgba(74,71,70,1) 100%);
+          color: #fff;
+          text-align: center;
+        }
+
+        .vignette {
+          position:absolute;
+          width:100%; height:100%;
+          box-shadow:inset 0px 0px 150px 20px black;
+          mix-blend-mode: multiply;
+          -webkit-animation: vignette-anim 3s infinite; /* Safari 4+ */
+          -moz-animation:    vignette-anim 3s infinite; /* Fx 5+ */
+          -o-animation:      vignette-anim 3s infinite; /* Opera 12+ */
+          animation:         vignette-anim 3s infinite; /* IE 10+, Fx 29+ */
+        }
+
+        .noise {
+          z-index: 100;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          opacity: .15;
+        }
+
+        .line {
+          position:absolute;
+          height:100%; width:1px;
+          opacity:0.1;
+          background-color:#000;
+        }
+
+        .titleCont {
+          position:relative;
+        }
+
+        .main-title {
+          padding: .3em 1em .25em;
+          font-weight: 400;
+          font-size: 40px;
+          color: white;
+          font-family: 'Bellefair', serif;
+          position:relative;
+          line-height:1.3;
+        }
+
+        .overTitle {
+          position:absolute;
+          top:0;
+          left:0;
+        }
+
+        .title-text {
+          font-size: 300%;
+        }
+
+        .end-title-text {
+          font-family: cursive;
+        }
+
+        .dot {
+          width:3px;
+          height:2px;
+          background-color:white;
+          position:absolute;
+          opacity:0.3;
+        }
+
+        @-webkit-keyframes vignette-anim {
+          0%   , 100%{ opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        @-moz-keyframes vignette-anim {
+          0%   , 100%{ opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        @-o-keyframes vignette-anim {
+          0%   , 100%{ opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        @keyframes vignette-anim {
+          0%   , 100%{ opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+      </style>
+</head>
+
+<body>
+  <input type="button" class="btn" value="Upload script" onclick="document.getElementById('file').click();" />
+  <input type="file" style="display:none;" accept='text/plain' id="file" name="file" onchange='openFile(event)' />
+
+  <input type="button" class="btn" value="Pause / Resume" onclick="pauseResume()" />
+  <input type="button" class="btn" value="Skip to next clip" onclick="skipping = true" />
+
+  <main role="main" class="main-content" id="main-content">
+    <div class="titleCont">
+      <h1 class="main-title" id="main-title">
+        <span id="line1"></span>
+        <br><span id="line2" style="padding-left:100px"></span>
+        <br><span id="line3" style="padding-right:110px"></span>
+        <br><span id="line4" style="padding-left:-20px"></span>
+      </h1>
+    </div>
+    <canvas id="noise" class="noise"></canvas>
+    <div class="vignette"></div>
+  </main>
+</body>
+
+<script>
+  /* https://codepen.io/mimikos/pen/GvpJYQ.js */
+  const noise = () => {
+    let canvas, ctx;
+
+    let wWidth, wHeight;
+
+    let noiseData = [];
+    let frame = 0;
+
+    let loopTimeout;
+
+
+    // Create Noise
+    const createNoise = () => {
+      const idata = ctx.createImageData(wWidth, wHeight);
+      const buffer32 = new Uint32Array(idata.data.buffer);
+      const len = buffer32.length;
+
+      for (let i = 0; i < len; i++) {
+        if (Math.random() < 0.5) {
+          buffer32[i] = 0xff000000;
+        }
+      }
+
+      noiseData.push(idata);
+    };
+
+
+    // Play Noise
+    const paintNoise = () => {
+      if (frame === 9) {
+        frame = 0;
+      } else {
+        frame++;
+      }
+
+      ctx.putImageData(noiseData[frame], 0, 0);
+    };
+
+
+    // Loop
+    const loop = () => {
+      paintNoise(frame);
+
+      loopTimeout = window.setTimeout(() => {
+        window.requestAnimationFrame(loop);
+      }, (1000 / 25));
+    };
+
+
+    // Setup
+    const setup = () => {
+      wWidth = window.innerWidth;
+      wHeight = window.innerHeight;
+
+      canvas.width = wWidth;
+      canvas.height = wHeight;
+
+      for (let i = 0; i < 10; i++) {
+        createNoise();
+      }
+
+      loop();
+    };
+
+
+    // Reset
+    let resizeThrottle;
+    const reset = () => {
+      window.addEventListener('resize', () => {
+        window.clearTimeout(resizeThrottle);
+
+        resizeThrottle = window.setTimeout(() => {
+          window.clearTimeout(loopTimeout);
+          setup();
+        }, 200);
+      }, false);
+    };
+
+
+    // Init
+    const init = (() => {
+      canvas = document.getElementById('noise');
+      ctx = canvas.getContext('2d');
+
+      setup();
+    })();
+  };
+
+  noise();
+</script>
+
+<script>
+  var keepPrevEffects = false;
+  var keepFrameDuration = 1000;
+  var numLines = 4;
+  var titleToken = "Title: ";
+  var timer = null;
+  var paused = false;
+  var skipping = false;
+
+  function pauseResume() {
+    paused = !paused;
+  }
+
+  var reloadOvertitle = function() {
+      var title = document.getElementById('overTitle');
+      if (title) title.remove();
+
+      var title = document.getElementById('main-title').cloneNode(true);
+      document.querySelector('.titleCont').appendChild(title);
+      title.classList.add("overTitle");
+      title.id = 'overTitle';
+
+      var tl = new TimelineMax({
+        repeat: -1
+      });
+
+      for (var i = 50; i--;) {
+        tl.to(title, R(0.03, 0.17), {
+          opacity: R(0, 1),
+          y: R(-1.5, 1.5),
+          x: R(-1.5, 1.5)
+        })
+      };
+  }
+
+  var createOldMovieEffect = function() {
+    var line = document.createElement('div');
+    line.className = 'line';
+    document.getElementById('main-content').appendChild(line);
+
+    var tl = new TimelineMax({
+      repeat: -1
+    });
+
+    tl.to(line, tl.duration() / 2, {
+      opacity: R(0.1, 1),
+      x: R(-window.innerWidth / 2, window.innerWidth / 2),
+      ease: RoughEase.ease.config({
+        strength: 0.5,
+        points: 10,
+        randomize: true,
+        taper: "none"
+      }),
+      repeat: 1
+    }, 0);
+
+    var dot;
+    for (var i = 0; i < 10; i++) {
+      dot = document.createElement('div');
+      dot.className = 'dot';
+      document.getElementById('main-content').prepend(dot);
+      setDotPosition(dot);
+      tl.to(dot, 0.1, {
+        opacity: 0,
+        repeat: 1,
+        yoyo: true,
+        onComplete: setDotPosition,
+        onCompleteParams: [dot],
+        ease: RoughEase.ease.config({
+          strength: 0.5,
+          points: 10,
+          randomize: true,
+          taper: "none"
+        })
+      }, 0);
+    }
+
+    function setDotPosition(dot) {
+      TweenMax.set(dot, {
+        x: R(-window.innerWidth / 2, window.innerWidth / 2),
+        y: R(-window.innerHeight, window.innerHeight),
+        delay: R(0, 1)
+      });
+    }
+  }
+
+  function R(max, min) {
+    return Math.random() * (max - min) + min
+  };
+
+  var loadScreen = function(lines) {
+    document.getElementById('line1').classList.remove("title-text");
+    for (var i = 0; i < numLines; i++) {
+      if (i < lines.length) {
+        var el = document.getElementById('line' + (i + 1));
+        if (el) {
+          el.innerText = lines[i];
+        }
+      }
+    }
+    reloadOvertitle();
+  }
+
+  function process(lines) {
+    var i = 0,
+      total = lines.length,
+      batch = [];
+    console.log(total);
+    timer = setInterval(function() {
+      if (paused) return;
+      if (i < total) {
+        var l = lines[i];
+        if (l.startsWith(titleToken)) {
+          loadScreen([l.split(titleToken)[1], '', '', '']);
+          document.getElementById('line1').classList.add("title-text");
+          batch = [];
+        } else if (skipping) {
+          i += 1;
+          while (i < total && !lines[i].startsWith(titleToken)) {
+            i += 1;
+          }
+          if (i < total) {
+            loadScreen([lines[i].split(titleToken)[1], '', '', '']);
+            document.getElementById('line1').classList.add("title-text");
+            batch = [];
+            skipping = false;
+          } else {
+            loadScreen(['The End', '', '', '']);
+            document.getElementById('line1').classList.add("title-text");
+            document.getElementById('line1').classList.add("end-title-text");
+          }
+        } else if (batch.length < numLines) {
+          batch.push(l);
+          if (batch.length === numLines) { // batch is full
+            batch[0] = '"' + batch[0];
+            let j = batch.length - 1;
+            while (!batch[j]) {
+              j -= 1;
+            }
+            batch[j] += '"';
+            loadScreen(batch);
+            batch = [];
+          }
+        }
+        i += 1;
+      } else {
+        clearInterval(timer);
+      }
+    }, keepFrameDuration);
+  }
+
+  var openFile = function(event) {
+    var input = event.target;
+    var reader = new FileReader();
+    reader.onload = function() {
+      if (reader.result) {
+        var searches = reader.result.split('\n');
+        process(searches);
+        createOldMovieEffect();
+      }
+    };
+    reader.readAsText(input.files[0]);
+  };
+</script>
+
+</html>
