@@ -1,5 +1,3 @@
-Search entries, as opposed to visited websites, are very close to my train of thought, and my feelings too. It's a direct output from my brain speaking to the internet. My curiosity, my anxieties, and my dreams. There is research, trips I've planned, searches about people I'm interested in, or companies I'd like to work for. There are searches about health concerns or about my finances. There are searches that I'm ashamed of, and others that make me proud because of where they lead. I've enjoyed watching this movie.
-
 ![1](https://github.com/chunw/GoogleSearches/blob/master/img/screen.png "1")
 
 ## Instructions to create your own Google Searches movie
